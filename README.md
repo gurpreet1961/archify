@@ -1,87 +1,70 @@
-# Welcome to React Router!
+# Archify
 
-A modern, production-ready template for building full-stack React applications using React Router.
+![Archify Banner](https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop)
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+> **Visualize, Render, and Ship Architectural Projects Faster Than Ever.**
 
-## Features
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## 📖 About
 
-## Getting Started
+**Archify** is an AI-first design environment tailored for architects and interior designers. It simplifies the workflow from concept to visualization, allowing professionals to upload floor plans, generate 3D renders, and manage projects in one seamless interface.
+
+Our goal is to democratize high-end architectural visualization, making it accessible and fast.
+
+## ✨ Features
+
+- **Modern Hero Section**: A stunning, responsive landing page with abstract 3D-style aesthetics.
+- **Secure File Upload**: Drag-and-drop interface for uploading floor plans (JPG/PNG, max 10MB) with integrated authentication checks.
+- **Project Management**: A dedicated dashboard to view and manage your architectural projects.
+- **Unified Design**: A seamless, dark-themed UI with global background effects.
+- **Authentication**: Secure login/signup flow (integrated with Puter.js).
+
+## 🚀 Getting Started
+
+Follow these instructions to get a copy of the project up and running on your local machine.
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm (v9 or higher)
 
 ### Installation
 
-Install the dependencies:
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/gurpreet1961/archify.git
+    cd archify
+    ```
 
-```bash
-npm install
-```
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-### Development
+3.  **Start the development server**
+    ```bash
+    npm run dev
+    ```
 
-Start the development server with HMR:
+4.  **Open in Browser**
+    Visit `http://localhost:5173` to view the application.
 
-```bash
-npm run dev
-```
+## 🛠️ Tech Stack
 
-Your application will be available at `http://localhost:5173`.
+- **Framework**: React Router v7
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Build Tool**: Vite
+- **Deployment**: Docker support included
 
-## Building for Production
+## 🤝 Contributing
 
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-Built with ❤️ using React Router.
+Built with ❤️ by the Archify Team.
