@@ -1,76 +1,97 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { signIn as puterSignIn, signOut as puterSignOut, getUser } from '../lib/puter.action';
-import type { AuthContextType, User } from '../app/types';
 
-const DEFAULT_AUTH_STATE: AuthContextType = {
-    user: null,
+const DEFAULT_AUTH_STATE: AuthContext = {
     isSignedIn: false,
-    signIn: async () => { },
-    signOut: async () => { },
-    refreshAuth: async () => { },
-    loading: true,
+    isAuthReady: false,
+    userName: null,
+    userId: null,
+    signIn: async () => false,
+    signOut: async () => false,
+    refreshAuth: async () => false,
 };
 
-const AuthContext = createContext<AuthContextType>(DEFAULT_AUTH_STATE);
+const AuthCtx = createContext<AuthContext>(DEFAULT_AUTH_STATE);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isSignedIn, setIsSignedIn] = useState(false);
+    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [userName, setUserName] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
 
-    const initAuth = async () => {
+    const refreshAuth = useCallback(async (): Promise<boolean> => {
         try {
-            const currentUser = await getUser();
-            setUser(currentUser);
+            const currentUser: any = await getUser();
+            if (currentUser) {
+                setIsSignedIn(true);
+                setUserName(currentUser.username ?? null);
+                setUserId(currentUser.uuid ?? currentUser.id ?? null);
+                return true;
+            }
+            setIsSignedIn(false);
+            setUserName(null);
+            setUserId(null);
+            return false;
         } catch (error) {
-            console.error("Failed to fetch user on mount:", error);
+            console.error("Failed to refresh auth:", error);
+            setIsSignedIn(false);
+            setUserName(null);
+            setUserId(null);
+            return false;
         } finally {
-            setLoading(false);
+            setIsAuthReady(true);
         }
-    };
-
-    useEffect(() => {
-        initAuth();
     }, []);
 
-    const signIn = async () => {
+    useEffect(() => {
+        refreshAuth();
+    }, [refreshAuth]);
+
+    const signIn = async (): Promise<boolean> => {
         try {
-            const signedInUser = await puterSignIn();
+            const signedInUser: any = await puterSignIn();
             if (signedInUser) {
-                setUser(signedInUser);
+                setIsSignedIn(true);
+                setUserName(signedInUser.username ?? null);
+                setUserId(signedInUser.uuid ?? signedInUser.id ?? null);
+                return true;
             }
+            return false;
         } catch (error) {
             console.error("Sign in error:", error);
+            return false;
         }
     };
 
-    const signOut = async () => {
+    const signOut = async (): Promise<boolean> => {
         try {
             await puterSignOut();
-            setUser(null);
+            setIsSignedIn(false);
+            setUserName(null);
+            setUserId(null);
+            return true;
         } catch (error) {
             console.error("Sign out error:", error);
+            return false;
         }
     };
 
-    const refreshAuth = async () => {
-        await initAuth();
-    };
-
-    const value = {
-        user,
-        isSignedIn: !!user,
+    const value: AuthContext = {
+        isSignedIn,
+        isAuthReady,
+        userName,
+        userId,
         signIn,
         signOut,
         refreshAuth,
-        loading
     };
 
     return (
-        <AuthContext.Provider value={value}>
+        <AuthCtx.Provider value={value}>
             {children}
-        </AuthContext.Provider>
+        </AuthCtx.Provider>
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthCtx);

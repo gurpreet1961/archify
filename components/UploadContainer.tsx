@@ -6,17 +6,14 @@ import {
     REDIRECT_DELAY_MS,
 } from "../lib/constants";
 
-interface UploadContainerProps {
-    onComplete?: (base64Data: string) => void;
-}
-
 /**
  * Upload area component that lets signed-in users select or drag-and-drop a JPG/PNG (≤10MB), shows upload progress, and calls `onComplete` with the file's base64 data when finished.
  *
- * @param onComplete - Optional callback invoked with the file's base64-encoded data after the simulated upload completes.
+ * @param onComplete - Callback invoked with the file's base64-encoded data after the simulated upload completes.
+ * @param className - Optional additional CSS class names.
  * @returns The upload container React element.
  */
-export default function UploadContainer({ onComplete }: UploadContainerProps) {
+export default function UploadContainer({ onComplete, className }: UploadProps) {
     const { isSignedIn, signIn } = useAuth();
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -129,7 +126,7 @@ export default function UploadContainer({ onComplete }: UploadContainerProps) {
     };
 
     return (
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 pb-24">
+        <div className={`mx-auto max-w-7xl px-6 lg:px-8 pb-24 ${className || ""}`}>
             <div className="mx-auto max-w-2xl text-center mb-8">
                 <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                     Start your project

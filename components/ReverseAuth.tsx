@@ -9,18 +9,14 @@ interface ReverseAuthProps {
 }
 
 export const ReverseAuth = ({ children, redirectTo = '/' }: ReverseAuthProps) => {
-    const { isSignedIn, loading } = useAuth();
+    const { isSignedIn } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!loading && isSignedIn) {
+        if (isSignedIn) {
             navigate(redirectTo);
         }
-    }, [isSignedIn, loading, navigate, redirectTo]);
-
-    if (loading) {
-        return null; // or a loading spinner
-    }
+    }, [isSignedIn, navigate, redirectTo]);
 
     if (isSignedIn) {
         return null; // Will redirect

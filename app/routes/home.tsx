@@ -1,9 +1,12 @@
 import type { Route } from "./+types/home";
 import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import Hero from "../../components/Hero";
 import UploadContainer from "../../components/UploadContainer";
 import Projects from "../../components/Projects";
+import { getOrCreateHostingConfig, uploadImageToHosting } from "../../lib/puter.hosting";
+import { setUploadData } from "../../lib/upload-store";
 
 /**
  * Provide metadata entries for the Home route.
@@ -20,16 +23,58 @@ export function meta({ }: Route.MetaArgs) {
 /**
  * Render the application home page and handle upload completion to open the visualizer.
  *
- * Renders navigation, hero, upload container (wired so completed uploads are saved to sessionStorage under the key `archify-upload-<projectId>` and the app navigates to `/visualizer/<projectId>`), and the projects list, alongside decorative background elements.
- *
  * @returns The Home page React element.
  */
 export default function Home() {
   const navigate = useNavigate();
+  const [hosting, setHosting] = useState<HostingConfig | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<Omit<StoreHostedImageParams, "hosting">[]>([]);
 
-  const handleUploadComplete = (base64Data: string) => {
+  useEffect(() => {
+    getOrCreateHostingConfig()
+      .then(setHosting)
+      .catch((err) => console.error("Failed to initialize hosting config:", err));
+  }, []);
+
+  // Drain pending upload queue once hosting becomes available
+  useEffect(() => {
+    if (!hosting || pendingUploads.length === 0) return;
+
+    const queue = [...pendingUploads];
+    setPendingUploads([]);
+
+    Promise.allSettled(
+      queue.map((params) =>
+        uploadImageToHosting({ ...params, hosting })
+      )
+    ).then((results) => {
+      const failed = queue.filter((_, i) => results[i].status === "rejected");
+      if (failed.length > 0) {
+        console.error(`${failed.length} queued upload(s) failed; re-queuing.`);
+        setPendingUploads((prev) => [...prev, ...failed]);
+      }
+    });
+  }, [hosting, pendingUploads]);
+
+  const handleUploadComplete = async (base64Data: string) => {
     const projectId = crypto.randomUUID();
-    sessionStorage.setItem(`archify-upload-${projectId}`, base64Data);
+    setUploadData(projectId, base64Data);
+
+    const uploadParams: Omit<StoreHostedImageParams, "hosting"> = {
+      url: base64Data,
+      projectId,
+      label: "source",
+    };
+
+    if (hosting) {
+      uploadImageToHosting({ ...uploadParams, hosting }).catch((err) =>
+        console.error("Puter upload failed:", err)
+      );
+    } else {
+      console.warn("Hosting not ready; upload queued for retry.");
+      setPendingUploads((prev) => [...prev, uploadParams]);
+    }
+
     navigate(`/visualizer/${projectId}`);
   };
   return (
