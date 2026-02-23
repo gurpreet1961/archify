@@ -1,4 +1,5 @@
 import type { Route } from "./+types/home";
+import { useNavigate } from "react-router";
 import Navbar from "../../components/Navbar";
 import Hero from "../../components/Hero";
 import UploadContainer from "../../components/UploadContainer";
@@ -12,6 +13,13 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  const handleUploadComplete = (base64Data: string) => {
+    const projectId = crypto.randomUUID();
+    sessionStorage.setItem(`archify-upload-${projectId}`, base64Data);
+    navigate(`/visualizer/${projectId}`);
+  };
   return (
     <div className="relative isolate overflow-hidden bg-gray-900">
       <div
@@ -29,7 +37,7 @@ export default function Home() {
 
       <Navbar />
       <Hero />
-      <UploadContainer />
+      <UploadContainer onComplete={handleUploadComplete} />
       <Projects />
 
       <div
