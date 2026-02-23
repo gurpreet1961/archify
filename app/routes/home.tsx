@@ -1,9 +1,12 @@
 import type { Route } from "./+types/home";
 import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import Hero from "../../components/Hero";
 import UploadContainer from "../../components/UploadContainer";
 import Projects from "../../components/Projects";
+import { getOrCreateHostingConfig, uploadImageToHosting } from "../../lib/puter.hosting";
+import { setUploadData } from "../../lib/upload-store";
 
 /**
  * Provide metadata entries for the Home route.
@@ -20,16 +23,28 @@ export function meta({ }: Route.MetaArgs) {
 /**
  * Render the application home page and handle upload completion to open the visualizer.
  *
- * Renders navigation, hero, upload container (wired so completed uploads are saved to sessionStorage under the key `archify-upload-<projectId>` and the app navigates to `/visualizer/<projectId>`), and the projects list, alongside decorative background elements.
- *
  * @returns The Home page React element.
  */
 export default function Home() {
   const navigate = useNavigate();
+  const [hosting, setHosting] = useState<HostingConfig | null>(null);
 
-  const handleUploadComplete = (base64Data: string) => {
+  useEffect(() => {
+    getOrCreateHostingConfig().then(setHosting);
+  }, []);
+
+  const handleUploadComplete = async (base64Data: string) => {
     const projectId = crypto.randomUUID();
-    sessionStorage.setItem(`archify-upload-${projectId}`, base64Data);
+    setUploadData(projectId, base64Data);
+
+    // Upload to Puter hosting in the background
+    uploadImageToHosting({
+      hosting,
+      url: base64Data,
+      projectId,
+      label: "source",
+    }).catch((err) => console.error("Puter upload failed:", err));
+
     navigate(`/visualizer/${projectId}`);
   };
   return (

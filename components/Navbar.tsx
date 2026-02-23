@@ -4,9 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, isSignedIn, signIn, signOut } = useAuth();
+    const { userName, isSignedIn, signIn, signOut } = useAuth();
 
-    const displayName = user?.username || "User";
+    const displayName = userName || "User";
 
     const handleAuth = async () => {
         if (isSignedIn) {
