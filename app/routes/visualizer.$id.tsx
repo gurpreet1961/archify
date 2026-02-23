@@ -1,5 +1,12 @@
 import { useParams } from "react-router";
 
+/**
+ * Visualizer route component that displays an uploaded base64 image for the current project ID.
+ *
+ * Retrieves the route `id` parameter and looks up image data in sessionStorage under the key `archify-upload-{id}`; when data is found it renders the image, otherwise it shows a "No upload data found for this project." message.
+ *
+ * @returns The rendered JSX element for the visualizer UI.
+ */
 export default function Visualizer() {
     const { id } = useParams();
     const base64Data = sessionStorage.getItem(`archify-upload-${id}`);

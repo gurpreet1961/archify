@@ -10,6 +10,12 @@ interface UploadContainerProps {
     onComplete?: (base64Data: string) => void;
 }
 
+/**
+ * Upload area component that lets signed-in users select or drag-and-drop a JPG/PNG (≤10MB), shows upload progress, and calls `onComplete` with the file's base64 data when finished.
+ *
+ * @param onComplete - Optional callback invoked with the file's base64-encoded data after the simulated upload completes.
+ * @returns The upload container React element.
+ */
 export default function UploadContainer({ onComplete }: UploadContainerProps) {
     const { isSignedIn, signIn } = useAuth();
     const [isDragging, setIsDragging] = useState(false);
