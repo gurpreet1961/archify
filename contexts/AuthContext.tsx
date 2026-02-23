@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { signIn as puterSignIn, signOut as puterSignOut, getUser } from '../lib/puter.action';
 
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [userName, setUserName] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
 
-    const refreshAuth = async (): Promise<boolean> => {
+    const refreshAuth = useCallback(async (): Promise<boolean> => {
         try {
             const currentUser: any = await getUser();
             if (currentUser) {
@@ -42,11 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsAuthReady(true);
         }
-    };
+    }, []);
 
     useEffect(() => {
         refreshAuth();
-    }, []);
+    }, [refreshAuth]);
 
     const signIn = async (): Promise<boolean> => {
         try {

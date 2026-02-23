@@ -36,7 +36,11 @@ export default function Visualizer() {
             .then((result) => {
                 if (result) {
                     setProject(result);
-                    setImageData(result.sourceImage);
+                    if (result.sourceImage) {
+                        setImageData(result.sourceImage);
+                    } else {
+                        setError("Project found but has no image data.");
+                    }
                 } else {
                     setError("No project found for this ID.");
                 }

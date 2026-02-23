@@ -28,7 +28,7 @@ export function meta({ }: Route.MetaArgs) {
 export default function Home() {
   const navigate = useNavigate();
   const [hosting, setHosting] = useState<HostingConfig | null>(null);
-  const [pendingUpload, setPendingUpload] = useState<Omit<StoreHostedImageParams, "hosting"> | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<Omit<StoreHostedImageParams, "hosting">[]>([]);
 
   useEffect(() => {
     getOrCreateHostingConfig()
@@ -36,15 +36,25 @@ export default function Home() {
       .catch((err) => console.error("Failed to initialize hosting config:", err));
   }, []);
 
-  // Retry pending upload once hosting becomes available
+  // Drain pending upload queue once hosting becomes available
   useEffect(() => {
-    if (hosting && pendingUpload) {
-      uploadImageToHosting({ ...pendingUpload, hosting }).catch((err) =>
-        console.error("Puter upload failed:", err)
-      );
-      setPendingUpload(null);
-    }
-  }, [hosting, pendingUpload]);
+    if (!hosting || pendingUploads.length === 0) return;
+
+    const queue = [...pendingUploads];
+    setPendingUploads([]);
+
+    Promise.allSettled(
+      queue.map((params) =>
+        uploadImageToHosting({ ...params, hosting })
+      )
+    ).then((results) => {
+      const failed = queue.filter((_, i) => results[i].status === "rejected");
+      if (failed.length > 0) {
+        console.error(`${failed.length} queued upload(s) failed; re-queuing.`);
+        setPendingUploads((prev) => [...prev, ...failed]);
+      }
+    });
+  }, [hosting, pendingUploads]);
 
   const handleUploadComplete = async (base64Data: string) => {
     const projectId = crypto.randomUUID();
@@ -62,7 +72,7 @@ export default function Home() {
       );
     } else {
       console.warn("Hosting not ready; upload queued for retry.");
-      setPendingUpload(uploadParams);
+      setPendingUploads((prev) => [...prev, uploadParams]);
     }
 
     navigate(`/visualizer/${projectId}`);

@@ -15,7 +15,7 @@ interface Material {
 interface DesignItem {
     id: string;
     name?: string | null;
-    sourceImage: string;
+    sourceImage?: string | null;
     sourcePath?: string | null;
     renderedImage?: string | null;
     renderedPath?: string | null;
@@ -33,12 +33,6 @@ interface DesignConfig {
     style: string;
 }
 
-enum AppStatus {
-    IDLE = "IDLE",
-    UPLOADING = "UPLOADING",
-    PROCESSING = "PROCESSING",
-    READY = "READY",
-}
 
 type RenderCompletePayload = {
     renderedImage: string;

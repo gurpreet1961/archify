@@ -82,7 +82,7 @@ export const getUserProjects = async (): Promise<DesignItem[]> => {
         );
 
         if (!response.ok) {
-            console.error("Failed to fetch projects:", await response.text());
+            console.error(`Failed to fetch projects (status ${response.status})`);
             return [];
         }
 

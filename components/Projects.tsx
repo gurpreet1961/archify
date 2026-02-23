@@ -7,6 +7,19 @@ export default function Projects() {
     const { isSignedIn } = useAuth();
     const [projects, setProjects] = useState<DesignItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [projectsError, setProjectsError] = useState<string | null>(null);
+
+    const fetchProjects = () => {
+        setLoading(true);
+        setProjectsError(null);
+        getUserProjects()
+            .then(setProjects)
+            .catch(() => {
+                setProjects([]);
+                setProjectsError("Failed to load projects. Please try again.");
+            })
+            .finally(() => setLoading(false));
+    };
 
     useEffect(() => {
         if (!isSignedIn) {
@@ -14,11 +27,7 @@ export default function Projects() {
             setLoading(false);
             return;
         }
-
-        setLoading(true);
-        getUserProjects()
-            .then(setProjects)
-            .finally(() => setLoading(false));
+        fetchProjects();
     }, [isSignedIn]);
 
     if (!isSignedIn) return null;
@@ -51,7 +60,19 @@ export default function Projects() {
                 </div>
             )}
 
-            {!loading && projects.length === 0 && (
+            {!loading && projectsError && (
+                <div className="mt-10 border-t border-gray-700 pt-10 text-center">
+                    <p className="text-red-400 text-lg font-medium">{projectsError}</p>
+                    <button
+                        onClick={fetchProjects}
+                        className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
+
+            {!loading && !projectsError && projects.length === 0 && (
                 <div className="mt-10 border-t border-gray-700 pt-10 text-center">
                     <svg
                         className="mx-auto h-12 w-12 text-gray-500"

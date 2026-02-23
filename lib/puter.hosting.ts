@@ -21,10 +21,23 @@ export const getOrCreateHostingConfig = async (): Promise<HostingConfig | null> 
 
     try {
         const created = await puter.hosting.create(subdomain, '.');
-
         const record = { subdomain: created.subdomain };
 
-        await puter.kv.set(HOSTING_CONFIG_KEY, record);
+        try {
+            await puter.kv.set(HOSTING_CONFIG_KEY, record);
+        } catch (kvError) {
+            console.error(
+                `Failed to persist hosting config for subdomain "${created.subdomain}":`,
+                kvError,
+            );
+            // Clean up orphaned subdomain
+            try {
+                await puter.hosting.delete(created.subdomain);
+            } catch {
+                // best-effort cleanup
+            }
+            return null;
+        }
 
         return record;
     } catch (createError) {
