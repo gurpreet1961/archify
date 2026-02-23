@@ -1,20 +1,36 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import {
+    PROGRESS_INTERVAL_MS,
+    PROGRESS_STEP,
+    REDIRECT_DELAY_MS,
+} from "../lib/constants";
 
-export default function UploadContainer() {
+interface UploadContainerProps {
+    onComplete?: (base64Data: string) => void;
+}
+
+/**
+ * Upload area component that lets signed-in users select or drag-and-drop a JPG/PNG (≤10MB), shows upload progress, and calls `onComplete` with the file's base64 data when finished.
+ *
+ * @param onComplete - Optional callback invoked with the file's base64-encoded data after the simulated upload completes.
+ * @returns The upload container React element.
+ */
+export default function UploadContainer({ onComplete }: UploadContainerProps) {
     const { isSignedIn, signIn } = useAuth();
-    const [dragActive, setDragActive] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
+    const [progress, setProgress] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
+            setIsDragging(true);
         } else if (e.type === "dragleave") {
-            setDragActive(false);
+            setIsDragging(false);
         }
     };
 
@@ -34,10 +50,42 @@ export default function UploadContainer() {
         return true;
     };
 
+    const processFile = useCallback(
+        (file: File) => {
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const base64Data = reader.result as string;
+                setProgress(0);
+
+                const interval = setInterval(() => {
+                    setProgress((prev) => {
+                        const next = prev + PROGRESS_STEP;
+                        if (next >= 100) {
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                onComplete?.(base64Data);
+                            }, REDIRECT_DELAY_MS);
+                            return 100;
+                        }
+                        return next;
+                    });
+                }, PROGRESS_INTERVAL_MS);
+            };
+
+            reader.onerror = () => {
+                setError("Failed to read file. Please try again.");
+            };
+
+            reader.readAsDataURL(file);
+        },
+        [onComplete]
+    );
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setDragActive(false);
+        setIsDragging(false);
 
         if (!isSignedIn) {
             signIn();
@@ -49,21 +97,25 @@ export default function UploadContainer() {
             if (validateFile(droppedFile)) {
                 setFile(droppedFile);
                 setError(null);
-                // Here we would typically upload the file
-                console.log("File ready for upload:", droppedFile.name);
+                processFile(droppedFile);
             }
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
+
+        if (!isSignedIn) {
+            signIn();
+            return;
+        }
+
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
             if (validateFile(selectedFile)) {
                 setFile(selectedFile);
                 setError(null);
-                // Here we would typically upload the file
-                console.log("File ready for upload:", selectedFile.name);
+                processFile(selectedFile);
             }
         }
     };
@@ -89,7 +141,7 @@ export default function UploadContainer() {
 
             <div
                 id="upload-section"
-                className={`relative flex flex-col items-center justify-center w-full max-w-3xl mx-auto h-64 border-2 border-dashed rounded-2xl transition-all duration-300 ${dragActive
+                className={`relative flex flex-col items-center justify-center w-full max-w-3xl mx-auto h-64 border-2 border-dashed rounded-2xl transition-all duration-300 ${isDragging
                     ? "border-indigo-500 bg-indigo-500/10"
                     : "border-gray-600 bg-gray-900/50 hover:border-gray-500 hover:bg-gray-800/50"
                     }`}
@@ -124,21 +176,41 @@ export default function UploadContainer() {
                         </svg>
                         <p className="mt-2 text-sm text-gray-400">Selected file:</p>
                         <p className="text-lg font-semibold text-white">{file.name}</p>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setFile(null);
-                            }}
-                            className="mt-4 text-sm font-medium text-red-400 hover:text-red-300"
-                        >
-                            Remove
-                        </button>
+
+                        {progress > 0 && progress < 100 && (
+                            <div className="mt-4 w-64 mx-auto">
+                                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-indigo-500 rounded-full transition-all duration-150"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-400">{progress}%</p>
+                            </div>
+                        )}
+
+                        {progress === 100 && (
+                            <p className="mt-2 text-sm text-green-400">Upload complete!</p>
+                        )}
+
+                        {progress === 0 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFile(null);
+                                }}
+                                className="mt-4 text-sm font-medium text-red-400 hover:text-red-300"
+                            >
+                                Remove
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="text-center p-6" onClick={onButtonClick}>
                         {/* Upload Icon */}
                         <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
+                            className={`mx-auto h-12 w-12 transition-colors duration-300 ${isDragging ? "text-indigo-400" : "text-gray-400"
+                                }`}
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -152,7 +224,11 @@ export default function UploadContainer() {
                             />
                         </svg>
                         <p className="mt-4 text-lg font-medium text-white">
-                            {isSignedIn ? "Drop your floor plan here" : "Sign in to upload"}
+                            {isDragging
+                                ? "Drop your file here"
+                                : isSignedIn
+                                    ? "Drop your floor plan here"
+                                    : "Sign in to upload"}
                         </p>
                         <p className="mt-2 text-sm text-gray-400">
                             or <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer">click to browse</span>

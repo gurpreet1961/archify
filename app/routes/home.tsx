@@ -1,9 +1,15 @@
 import type { Route } from "./+types/home";
+import { useNavigate } from "react-router";
 import Navbar from "../../components/Navbar";
 import Hero from "../../components/Hero";
 import UploadContainer from "../../components/UploadContainer";
 import Projects from "../../components/Projects";
 
+/**
+ * Provide metadata entries for the Home route.
+ *
+ * @returns An array of metadata objects including the page `title` and a `description` content entry.
+ */
 export function meta({ }: Route.MetaArgs) {
   return [
     { title: "Archify" },
@@ -11,7 +17,21 @@ export function meta({ }: Route.MetaArgs) {
   ];
 }
 
+/**
+ * Render the application home page and handle upload completion to open the visualizer.
+ *
+ * Renders navigation, hero, upload container (wired so completed uploads are saved to sessionStorage under the key `archify-upload-<projectId>` and the app navigates to `/visualizer/<projectId>`), and the projects list, alongside decorative background elements.
+ *
+ * @returns The Home page React element.
+ */
 export default function Home() {
+  const navigate = useNavigate();
+
+  const handleUploadComplete = (base64Data: string) => {
+    const projectId = crypto.randomUUID();
+    sessionStorage.setItem(`archify-upload-${projectId}`, base64Data);
+    navigate(`/visualizer/${projectId}`);
+  };
   return (
     <div className="relative isolate overflow-hidden bg-gray-900">
       <div
@@ -29,7 +49,7 @@ export default function Home() {
 
       <Navbar />
       <Hero />
-      <UploadContainer />
+      <UploadContainer onComplete={handleUploadComplete} />
       <Projects />
 
       <div
