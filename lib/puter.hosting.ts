@@ -9,9 +9,13 @@ import {
 } from "./utils";
 
 export const getOrCreateHostingConfig = async (): Promise<HostingConfig | null> => {
-    const existing = (await puter.kv.get(HOSTING_CONFIG_KEY)) as HostingConfig | null;
+    try {
+        const existing = (await puter.kv.get(HOSTING_CONFIG_KEY)) as HostingConfig | null;
 
-    if (existing?.subdomain) return { subdomain: existing.subdomain };
+        if (existing?.subdomain) return { subdomain: existing.subdomain };
+    } catch (readError) {
+        console.warn("Failed to read hosting config from KV store:", readError);
+    }
 
     const subdomain = createHostingSlug();
 
@@ -23,8 +27,8 @@ export const getOrCreateHostingConfig = async (): Promise<HostingConfig | null> 
         await puter.kv.set(HOSTING_CONFIG_KEY, record);
 
         return record;
-    } catch (e) {
-        console.warn(`Could not find subdomain: ${e}`);
+    } catch (createError) {
+        console.error("Failed to create hosting subdomain:", createError);
         return null;
     }
 }

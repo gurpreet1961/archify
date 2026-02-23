@@ -28,22 +28,42 @@ export function meta({ }: Route.MetaArgs) {
 export default function Home() {
   const navigate = useNavigate();
   const [hosting, setHosting] = useState<HostingConfig | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<Omit<StoreHostedImageParams, "hosting"> | null>(null);
 
   useEffect(() => {
-    getOrCreateHostingConfig().then(setHosting);
+    getOrCreateHostingConfig()
+      .then(setHosting)
+      .catch((err) => console.error("Failed to initialize hosting config:", err));
   }, []);
+
+  // Retry pending upload once hosting becomes available
+  useEffect(() => {
+    if (hosting && pendingUpload) {
+      uploadImageToHosting({ ...pendingUpload, hosting }).catch((err) =>
+        console.error("Puter upload failed:", err)
+      );
+      setPendingUpload(null);
+    }
+  }, [hosting, pendingUpload]);
 
   const handleUploadComplete = async (base64Data: string) => {
     const projectId = crypto.randomUUID();
     setUploadData(projectId, base64Data);
 
-    // Upload to Puter hosting in the background
-    uploadImageToHosting({
-      hosting,
+    const uploadParams: Omit<StoreHostedImageParams, "hosting"> = {
       url: base64Data,
       projectId,
       label: "source",
-    }).catch((err) => console.error("Puter upload failed:", err));
+    };
+
+    if (hosting) {
+      uploadImageToHosting({ ...uploadParams, hosting }).catch((err) =>
+        console.error("Puter upload failed:", err)
+      );
+    } else {
+      console.warn("Hosting not ready; upload queued for retry.");
+      setPendingUpload(uploadParams);
+    }
 
     navigate(`/visualizer/${projectId}`);
   };

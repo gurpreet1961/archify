@@ -80,10 +80,16 @@ export default function Projects() {
                     {projects.map((project) => {
                         const displayImage =
                             project.renderedImage || project.sourceImage;
-                        const dateStr = new Date(project.timestamp).toLocaleDateString(
-                            undefined,
-                            { year: "numeric", month: "short", day: "numeric" }
-                        );
+                        const date = new Date(project.timestamp);
+                        const isValidDate = !isNaN(date.getTime());
+                        const isoDate = isValidDate ? date.toISOString() : undefined;
+                        const displayDate = isValidDate
+                            ? date.toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                            })
+                            : "Unknown date";
                         const status: string = project.renderedImage
                             ? "Completed"
                             : "Draft";
@@ -119,13 +125,13 @@ export default function Projects() {
                                     )}
                                 </div>
                                 <div className="flex items-center gap-x-4 text-xs">
-                                    <time dateTime={dateStr} className="text-gray-400">
-                                        {dateStr}
+                                    <time dateTime={isoDate} className="text-gray-400">
+                                        {displayDate}
                                     </time>
                                     <span
                                         className={`relative z-10 rounded-full px-3 py-1.5 font-medium ${status === "Completed"
-                                                ? "bg-green-500/10 text-green-400"
-                                                : "bg-gray-500/10 text-gray-400"
+                                            ? "bg-green-500/10 text-green-400"
+                                            : "bg-gray-500/10 text-gray-400"
                                             }`}
                                     >
                                         {status}

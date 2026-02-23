@@ -49,7 +49,9 @@ export default function Visualizer() {
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
             <div className="text-center">
                 <h1 className="text-3xl font-bold text-white">Visualizer</h1>
-                <p className="mt-2 text-gray-400">Project ID: {id}</p>
+                {import.meta.env.DEV && (
+                    <p className="mt-2 text-gray-400">Project ID: {id}</p>
+                )}
 
                 {loading && (
                     <p className="mt-4 text-gray-400 animate-pulse">Loading project...</p>

@@ -68,7 +68,7 @@ interface VisualizerProps {
 }
 
 interface UploadProps {
-    onComplete: (base64File: string) => Promise<boolean | void> | boolean | void;
+    onComplete: (base64File: string) => Promise<void> | void;
     className?: string;
 }
 
@@ -85,10 +85,8 @@ interface CardProps {
     action?: React.ReactNode;
 }
 
-type AuthContext = {
-    isSignedIn: boolean;
-    userName: string | null;
-    userId: string | null;
+type AuthContext = AuthState & {
+    isAuthReady: boolean;
     refreshAuth: () => Promise<boolean>;
     signIn: () => Promise<boolean>;
     signOut: () => Promise<boolean>;

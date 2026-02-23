@@ -35,13 +35,15 @@ export const isSignedIn = async () => {
     return puter.auth.isSignedIn();
 }
 
+const isDev = import.meta.env.DEV;
+
 export const getProjectById = async ({ id }: { id: string }) => {
     if (!PUTER_WORKER_URL) {
         console.warn("Missing VITE_PUTER_WORKER_URL; skipping project fetch.");
         return null;
     }
 
-    console.log("Fetching project with ID:", id);
+    if (isDev) console.log("Fetching project:", id);
 
     try {
         const response = await puter.workers.exec(
@@ -49,10 +51,8 @@ export const getProjectById = async ({ id }: { id: string }) => {
             { method: "GET" },
         );
 
-        console.log("Fetch project response:", response);
-
         if (!response.ok) {
-            console.error("Failed to fetch project:", await response.text());
+            console.error(`Failed to fetch project (status ${response.status})`);
             return null;
         }
 
@@ -60,7 +60,7 @@ export const getProjectById = async ({ id }: { id: string }) => {
             project?: DesignItem | null;
         };
 
-        console.log("Fetched project data:", data);
+        if (isDev) console.log("Fetched project:", data?.project?.id);
 
         return data?.project ?? null;
     } catch (error) {

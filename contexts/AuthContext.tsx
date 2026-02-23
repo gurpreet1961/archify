@@ -4,6 +4,7 @@ import { signIn as puterSignIn, signOut as puterSignOut, getUser } from '../lib/
 
 const DEFAULT_AUTH_STATE: AuthContext = {
     isSignedIn: false,
+    isAuthReady: false,
     userName: null,
     userId: null,
     signIn: async () => false,
@@ -15,6 +16,7 @@ const AuthCtx = createContext<AuthContext>(DEFAULT_AUTH_STATE);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isSignedIn, setIsSignedIn] = useState(false);
+    const [isAuthReady, setIsAuthReady] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
 
@@ -37,6 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUserName(null);
             setUserId(null);
             return false;
+        } finally {
+            setIsAuthReady(true);
         }
     };
 
@@ -75,6 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const value: AuthContext = {
         isSignedIn,
+        isAuthReady,
         userName,
         userId,
         signIn,

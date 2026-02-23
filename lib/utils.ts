@@ -1,8 +1,15 @@
 export const HOSTING_CONFIG_KEY = "archify_hosting_config";
 export const HOSTING_DOMAIN_SUFFIX = ".puter.site";
 
-export const isHostedUrl = (value: unknown): value is string =>
-    typeof value === "string" && value.includes(HOSTING_DOMAIN_SUFFIX);
+export const isHostedUrl = (value: unknown): value is string => {
+    if (typeof value !== "string") return false;
+    try {
+        const parsed = new URL(value);
+        return parsed.hostname.endsWith(HOSTING_DOMAIN_SUFFIX);
+    } catch {
+        return false;
+    }
+};
 
 export const createHostingSlug = () =>
     `archify-${Date.now().toString(36)}-${Math.random()
@@ -38,7 +45,7 @@ export const getImageExtension = (contentType: string, url: string): string => {
     const dataMatch = url.match(/^data:image\/([a-z0-9+.-]+);/i);
     if (dataMatch?.[1]) {
         const ext = dataMatch[1].toLowerCase();
-        return ext === "jpeg" ? "jpg" : ext;
+        return ext === "jpeg" ? "jpg" : ext === "svg+xml" ? "svg" : ext;
     }
 
     const extMatch = url.match(/\.([a-z0-9]+)(?:$|[?#])/i);
