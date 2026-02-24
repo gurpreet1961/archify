@@ -22,3 +22,231 @@ body {
     display: none;
   }
 }
+
+/* ── Visualizer ── */
+.visualizer {
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.visualizer .topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid rgba(255 255 255 / 0.06);
+  background: rgba(15 23 42 / 0.85);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.visualizer .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.visualizer .brand .logo {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #818cf8;
+}
+
+.visualizer .brand .name {
+  font-weight: 700;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.visualizer .exit .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.visualizer .content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  max-width: 90rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .visualizer .content {
+    grid-template-columns: 3fr 1fr;
+  }
+}
+
+.visualizer .panel {
+  background: rgba(30 41 59 / 0.45);
+  border: 1px solid rgba(255 255 255 / 0.05);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.visualizer .panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255 255 255 / 0.05);
+}
+
+.visualizer .panel-meta p {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.visualizer .panel-meta h2,
+.visualizer .panel-meta h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.visualizer .panel-meta .note {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+.visualizer .panel-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.visualizer .hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  align-self: center;
+}
+
+/* Render area */
+.visualizer .render-area {
+  position: relative;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.visualizer .render-area.is-processing .render-img,
+.visualizer .render-area.is-processing .render-fallback {
+  filter: blur(4px) brightness(0.5);
+  transition: filter 0.3s ease;
+}
+
+.visualizer .render-img,
+.visualizer .render-fallback {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 0.75rem;
+  object-fit: contain;
+  transition: filter 0.3s ease;
+}
+
+.visualizer .render-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.visualizer .render-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.visualizer .rendering-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15 23 42 / 0.85);
+  backdrop-filter: blur(8px);
+  padding: 1.5rem 2.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255 255 255 / 0.08);
+}
+
+.visualizer .rendering-card .spinner {
+  width: 2rem;
+  height: 2rem;
+  color: #818cf8;
+  animation: spin 1.2s linear infinite;
+}
+
+.visualizer .rendering-card .title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.visualizer .rendering-card .subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Compare panel */
+.visualizer .compare-stage {
+  padding: 1rem;
+}
+
+.visualizer .compare-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+
+.visualizer .compare-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Full-page loader */
+.visualizer .visualizer-loader {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.visualizer .visualizer-loader .spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #818cf8;
+  animation: spin 1.2s linear infinite;
+}
+
+.visualizer .render-empty {
+  color: #64748b;
+  font-size: 0.85rem;
+  padding: 4rem 0;
+  text-align: center;
+}

@@ -1,78 +1,251 @@
-import { useParams } from "react-router";
-import { useState, useEffect } from "react";
+import { useNavigate, useOutletContext, useParams } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { generate3DView } from "../../lib/ai.action";
+import { Box, Download, RefreshCcw, Share2, X } from "lucide-react";
+import Button from "../../components/ui/Button";
+import { createProject, getProjectById } from "../../lib/puter.action";
 import { getUploadData } from "../../lib/upload-store";
-import { getProjectById } from "../../lib/puter.action";
+import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 
-/**
- * Visualizer route component that displays an uploaded image for the current project ID.
- *
- * First checks the in-memory upload store for data (fresh uploads). If not found,
- * falls back to fetching the project from the Puter worker API via getProjectById.
- */
-export default function Visualizer() {
+const VisualizerId = () => {
     const { id } = useParams();
-    const [imageData, setImageData] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const { userId } = useOutletContext<AuthContext>()
+
+    const hasInitialGenerated = useRef(false);
+
     const [project, setProject] = useState<DesignItem | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [isProjectLoading, setIsProjectLoading] = useState(true);
+
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [currentImage, setCurrentImage] = useState<string | null>(null);
+
+    const handleBack = () => navigate('/');
+    const handleExport = () => {
+        if (!currentImage) return;
+
+        const link = document.createElement('a');
+        link.href = currentImage;
+        link.download = `archify-${id || 'design'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    const runGeneration = async (item: DesignItem) => {
+        if (!id || !item.sourceImage) return;
+
+        try {
+            setIsProcessing(true);
+            const result = await generate3DView({ sourceImage: item.sourceImage });
+
+            if (result.renderedImage) {
+                setCurrentImage(result.renderedImage);
+
+                const updatedItem = {
+                    ...item,
+                    renderedImage: result.renderedImage,
+                    renderedPath: result.renderedPath,
+                    timestamp: Date.now(),
+                    ownerId: item.ownerId ?? userId ?? null,
+                    isPublic: item.isPublic ?? false,
+                }
+
+                const saved = await createProject({ item: updatedItem, visibility: "private" })
+
+                if (saved) {
+                    setProject(saved);
+                    setCurrentImage(saved.renderedImage || result.renderedImage);
+                }
+            }
+        } catch (error) {
+            console.error('Generation failed: ', error)
+        } finally {
+            setIsProcessing(false);
+        }
+    }
 
     useEffect(() => {
-        if (!id) {
-            setError("No project ID provided.");
-            setLoading(false);
-            return;
-        }
+        let isMounted = true;
 
-        // Check in-memory store first (available right after upload)
-        const localData = getUploadData(id);
-        if (localData) {
-            setImageData(localData);
-            setLoading(false);
-            return;
-        }
+        const loadProject = async () => {
+            if (!id) {
+                setIsProjectLoading(false);
+                return;
+            }
 
-        // Fallback: fetch from Puter worker API
-        getProjectById({ id })
-            .then((result) => {
-                if (result) {
-                    setProject(result);
-                    if (result.sourceImage) {
-                        setImageData(result.sourceImage);
-                    } else {
-                        setError("Project found but has no image data.");
-                    }
-                } else {
-                    setError("No project found for this ID.");
+            setIsProjectLoading(true);
+
+            const fetchedProject = await getProjectById({ id });
+
+            if (!isMounted) return;
+
+            if (fetchedProject) {
+                setProject(fetchedProject);
+                setCurrentImage(fetchedProject.renderedImage || null);
+            } else {
+                // Fallback: check in-memory upload store (fresh uploads)
+                const localData = getUploadData(id);
+                if (localData) {
+                    const tempProject: DesignItem = {
+                        id,
+                        name: `Residence ${id.slice(0, 8)}`,
+                        sourceImage: localData,
+                        renderedImage: null,
+                        renderedPath: undefined,
+                        timestamp: Date.now(),
+                        ownerId: userId ?? null,
+                        isPublic: false,
+                    };
+                    setProject(tempProject);
                 }
-            })
-            .catch(() => setError("Failed to load project."))
-            .finally(() => setLoading(false));
+            }
+
+            setIsProjectLoading(false);
+            hasInitialGenerated.current = false;
+        };
+
+        loadProject();
+
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
-    return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-white">Visualizer</h1>
-                {import.meta.env.DEV && (
-                    <p className="mt-2 text-gray-400">Project ID: {id}</p>
-                )}
+    useEffect(() => {
+        if (
+            isProjectLoading ||
+            hasInitialGenerated.current ||
+            !project?.sourceImage
+        )
+            return;
 
-                {loading && (
-                    <p className="mt-4 text-gray-400 animate-pulse">Loading project...</p>
-                )}
+        if (project.renderedImage) {
+            setCurrentImage(project.renderedImage);
+            hasInitialGenerated.current = true;
+            return;
+        }
 
-                {error && (
-                    <p className="mt-4 text-red-400">{error}</p>
-                )}
+        hasInitialGenerated.current = true;
+        void runGeneration(project);
+    }, [project, isProjectLoading]);
 
-                {imageData && (
-                    <img
-                        src={imageData}
-                        alt={project?.name || "Uploaded floor plan"}
-                        className="mt-6 max-w-2xl mx-auto rounded-xl border border-gray-700"
-                    />
-                )}
+    if (isProjectLoading) {
+        return (
+            <div className="visualizer">
+                <nav className="topbar">
+                    <div className="brand">
+                        <Box className="logo" />
+                        <span className="name">Archify</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleBack} className="exit">
+                        <X className="icon" /> Exit Editor
+                    </Button>
+                </nav>
+                <div className="visualizer-loader">
+                    <RefreshCcw className="spinner" />
+                    <span>Loading project...</span>
+                </div>
             </div>
+        );
+    }
+
+    return (
+        <div className="visualizer">
+            <nav className="topbar">
+                <div className="brand">
+                    <Box className="logo" />
+
+                    <span className="name">Archify</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleBack} className="exit">
+                    <X className="icon" /> Exit Editor
+                </Button>
+            </nav>
+
+            <section className="content">
+                <div className="panel">
+                    <div className="panel-header">
+                        <div className="panel-meta">
+                            <p>Project</p>
+                            <h2>{project?.name || `Residence ${id}`}</h2>
+                            <p className="note">Created by You</p>
+                        </div>
+
+                        <div className="panel-actions">
+                            <Button
+                                size="sm"
+                                onClick={handleExport}
+                                className="export"
+                                disabled={!currentImage}
+                            >
+                                <Download className="w-4 h-4 mr-2" /> Export
+                            </Button>
+                            <Button size="sm" onClick={() => { }} className="share">
+                                <Share2 className="w-4 h-4 mr-2" />
+                                Share
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className={`render-area ${isProcessing ? 'is-processing' : ''}`}>
+                        {currentImage ? (
+                            <img src={currentImage} alt="AI Render" className="render-img" />
+                        ) : (
+                            <div className="render-placeholder">
+                                {project?.sourceImage ? (
+                                    <img src={project.sourceImage} alt="Original" className="render-fallback" />
+                                ) : (
+                                    <div className="render-empty">No image available</div>
+                                )}
+                            </div>
+                        )}
+
+                        {isProcessing && (
+                            <div className="render-overlay">
+                                <div className="rendering-card">
+                                    <RefreshCcw className="spinner" />
+                                    <span className="title">Rendering...</span>
+                                    <span className="subtitle">Generating your 3D visualization</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+
+                <div className="panel compare">
+                    <div className="panel-header">
+                        <div className="panel-meta">
+                            <p>Comparison</p>
+                            <h3>Before and After</h3>
+                        </div>
+                        <div className="hint">Drag to compare</div>
+                    </div>
+
+                    <div className="compare-stage">
+                        {project?.sourceImage && currentImage ? (
+                            <ReactCompareSlider
+                                defaultValue={50}
+                                style={{ width: '100%', height: 'auto' }}
+                                itemOne={
+                                    <ReactCompareSliderImage src={project?.sourceImage} alt="before" className="compare-img" />
+                                }
+                                itemTwo={
+                                    <ReactCompareSliderImage src={currentImage || project?.renderedImage || undefined} alt="after" className="compare-img" />
+                                }
+                            />
+                        ) : (
+                            <div className="compare-fallback">
+                                {project?.sourceImage && (
+                                    <img src={project.sourceImage} alt="Before" className="compare-img" />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
         </div>
-    );
+    )
 }
+export default VisualizerId
