@@ -41,12 +41,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { AuthProvider } from "../contexts/AuthContext";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+
+function AppLayout() {
+  const auth = useAuth();
+  return <Outlet context={auth} />;
+}
 
 export default function App() {
   return (
     <AuthProvider>
-      <Outlet />
+      <AppLayout />
     </AuthProvider>
   );
 }

@@ -97,3 +97,32 @@ export const getUserProjects = async (): Promise<DesignItem[]> => {
     }
 };
 
+export const createProject = async ({ item, visibility = "private" }: CreateProjectParams): Promise<DesignItem | null> => {
+    if (isDev) console.log("Creating/updating project:", item.id);
+
+    try {
+        const projectToSave: DesignItem = {
+            ...item,
+            isPublic: visibility === "public",
+            timestamp: item.timestamp ?? Date.now(),
+        };
+
+        // Store project in Puter KV
+        await puter.kv.set(`project:${item.id}`, JSON.stringify(projectToSave));
+
+        // Update the project index (list of project IDs)
+        const rawIndex = await puter.kv.get("project_index");
+        const index: string[] = rawIndex ? JSON.parse(rawIndex as string) : [];
+        if (!index.includes(item.id)) {
+            index.push(item.id);
+            await puter.kv.set("project_index", JSON.stringify(index));
+        }
+
+        if (isDev) console.log("Saved project:", item.id);
+
+        return projectToSave;
+    } catch (error) {
+        console.error("Failed to create project:", error);
+        return null;
+    }
+};
